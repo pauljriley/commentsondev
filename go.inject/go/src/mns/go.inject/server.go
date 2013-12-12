@@ -1,26 +1,26 @@
-package inject_test
+package main
 
 import (
 	"fmt"
-	"os"
 	"github.com/ParsePlatform/go.inject"
+	"os"
 )
 
 // Interfaces
 
 type CARFACTORY interface {
-	makeCar() CAR     `inject:""`
-	getMake() string  `inject:""`
+	makeCar() CAR
+	getMake() string
 }
 
 type CAR interface {
-	getModel() string `inject:""`
+	getModel() string
 }
 
 // Concrete implementations
 
 type FordFactory struct {
-	car CAR
+	car *FordMondeo `inject:""`
 }
 
 type FordMondeo struct {
@@ -31,7 +31,7 @@ func (s *FordMondeo) getModel() string {
 }
 
 func (s FordFactory) makeCar() CAR {
-	return new(FordMondeo)
+	return s.car
 }
 
 func (s FordFactory) getMake() string {
@@ -46,27 +46,20 @@ func main() {
 	var carFactory FordFactory
 
 	err := graph.Provide(
-		&inject.Object{Value: &carFactory},
-		&inject.Object{Value: http.DefaultTransport},
-		)
+		&inject.Object{Value: new(FordMondeo)},
+	)
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
+	if err := graph.Populate(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		fmt.Println("exit 2")
+		os.Exit(1)
+	}
 
-
-	di := depinject.NewDependencyInjector()
-
-	di.MustRegister(func() CAR {
-		return new(FordMondeo)
-	})
-	di.MustRegister(func(myCar CAR) FordFactory {
-		return FordFactory{car: myCar}
-	})
-
-	myCarFactory := di.Create(FordFactory{}).(FordFactory)
-	myCar := myCarFactory.makeCar()
+	myCar := carFactory.makeCar()
 	fmt.Println(myCar.getModel())
 }

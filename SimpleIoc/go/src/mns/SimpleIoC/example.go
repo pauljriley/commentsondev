@@ -53,7 +53,11 @@ func (s *FordMondeo) getModel() string {
 }
 
 func (s FordFactory) makeCar() CAR {
-	return new(FordMondeo)
+	if s.car == nil {
+		s.car = new(FordMondeo)
+	}
+
+	return s.car
 }
 
 func (s FordFactory) getMake() string {

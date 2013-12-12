@@ -3,35 +3,60 @@ package main
 import (
 	"code.google.com/p/go-inject"
 	"fmt"
-	"reflect"
 )
 
+// Interfaces
+
+type CARFACTORY interface {
+	makeCar() CAR
+	getMake() string
+}
+
 type CAR interface {
-	Make() string
-	Model() string
-	Colour() string
+	getModel() string
 }
 
-type Ford struct {
+// Concrete implementations
+
+type FordFactory struct {
+	car CAR
 }
 
-func (c *Ford) Make() string {
+type FordMondeo struct {
+}
+
+func (s *FordMondeo) getModel() string {
+	return "Mondeo"
+}
+
+func (s FordFactory) makeCar() CAR {
+	if s.car == nil {
+		// s.car = new(FordMondeo)
+		fmt.Println("Car?")
+	}
+
+	return s.car
+}
+
+func (s FordFactory) getMake() string {
 	return "Ford"
 }
 
-func (c *Ford) Model() string {
-	return "Modeao"
-}
+// Injector tags
 
-func (c *Ford) Colour() string {
-	return "Red"
-}
+type GetCarFactory struct{}
+
+// Main function
 
 func main() {
 	injector := inject.CreateInjector()
-	var ford Ford
-	injector.BindInstance(reflect.TypeOf((*CAR)(nil)), ford)
+
+	injector.Bind(GetCarFactory{}, func(context inject.Context, container inject.Container) interface{} {
+		return FordFactory{car: new(FordMondeo)}
+	})
 	container := injector.CreateContainer()
-	car := container.GetInstance(nil, reflect.TypeOf((*CAR)(nil)))
-	fmt.Println(fmt.Sprintf("Make : %s, Model : %s, Colour : %s", car.Make(), car.Model(), car.Colour()))
+
+	myCarFactory := container.GetInstance(nil, GetCarFactory{}).(CARFACTORY)
+	myCar := myCarFactory.makeCar()
+	fmt.Println(myCar.getModel())
 }
